@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Randevu Sistemi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        form {
+            max-width: 400px;
+            margin: auto;
+        }
+        input, select, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Randevu Oluştur</h2>
+    <form id="appointmentForm">
+        <input type="text" id="name" placeholder="Ad Soyad" required>
+        
+        <select id="consultant" required>
+            <option value="">Danışman Seçin</option>
+            {% for consultant in consultants %}
+                <option value="{{ consultant[0] }}">{{ consultant[1] }}</option>
+            {% endfor %}
+        </select>
+
+        <input type="date" id="date" required>
+        <select id="time" required>
+            <option value="">Saat Seçin</option>
+        </select>
+
+        <button type="submit">Gönder</button>
+    </form>
+    <p id="result"></p>
+
+    <script>
+        const dateInput = document.getElementById('date');
+        const consultantSelect = document.getElementById('consultant');
+        const timeSelect = document.getElementById('time');
+
+        function loadAvailableTimes() {
+            const date = dateInput.value;
+            const consultantId = consultantSelect.value;
+            if (!date || !consultantId) return;
+
+            fetch('/api/available-times', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date, consultantId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                timeSelect.innerHTML = '<option value="">Saat Seçin</option>';
+                if (data.available_times) {
+                    data.available_times.forEach(time => {
+                        const option = document.createElement('option');
+                        option.value = time;
+                        option.textContent = time;
+                        timeSelect.appendChild(option);
+                    });
+                }
+            });
+        }
+
+        dateInput.addEventListener('change', loadAvailableTimes);
+        consultantSelect.addEventListener('change', loadAvailableTimes);
+
+        document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const date = dateInput.value;
+            const time = timeSelect.value;
+            const consultantId = consultantSelect.value;
+
+            fetch('/api/appointment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, date, time, consultantId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('result').innerText = data.message || data.error;
+            })
+            .catch(err => {
+                document.getElementById('result').innerText = "Hata oluştu.";
+                console.error(err);
+            });
+        });
+    </script>
+</body>
+</html>
