@@ -24,15 +24,16 @@
     <h2>Randevu Oluştur</h2>
     <form id="appointmentForm">
         <input type="text" id="name" placeholder="Ad Soyad" required>
-        
+
         <select id="consultant" required>
             <option value="">Danışman Seçin</option>
             {% for consultant in consultants %}
-                <option value="{{ consultant[0] }}">{{ consultant[1] }}</option>
+                <option value="{{ consultant.id }}">{{ consultant.name }}</option>
             {% endfor %}
         </select>
 
         <input type="date" id="date" required>
+
         <select id="time" required>
             <option value="">Saat Seçin</option>
         </select>
@@ -59,13 +60,15 @@
             .then(res => res.json())
             .then(data => {
                 timeSelect.innerHTML = '<option value="">Saat Seçin</option>';
-                if (data.available_times) {
+                if (data.available_times && data.available_times.length > 0) {
                     data.available_times.forEach(time => {
                         const option = document.createElement('option');
                         option.value = time;
                         option.textContent = time;
                         timeSelect.appendChild(option);
                     });
+                } else {
+                    timeSelect.innerHTML = '<option value="">Uygun saat yok</option>';
                 }
             });
         }
@@ -97,3 +100,4 @@
     </script>
 </body>
 </html>
+
