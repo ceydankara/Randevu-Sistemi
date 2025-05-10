@@ -12,3 +12,10 @@ CREATE TABLE Appointments (
     consultant_id INT NOT NULL,            -- Danışman ID'si (foreign key)
     FOREIGN KEY (consultant_id) REFERENCES Consultants(id)
 );
+
+
+INSERT INTO Consultants ( name)
+VALUES 
+    ( 'Ayşe Yılmaz'),
+    ( 'Mehmet Demir'),
+    ('Zeynep Korkmaz');
