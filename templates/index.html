@@ -7,21 +7,37 @@
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
+            background-color: rgb(245, 230, 180);
+    
         }
         form {
-            max-width: 400px;
+            width: 90%;
+            max-width: 500px;
             margin: auto;
-        }
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+}
+
         input, select, button {
             display: block;
             width: 100%;
             margin-bottom: 15px;
-            padding: 10px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        button{
+            background-color: rgb(209, 218, 223);
+            font-size: 20px;
         }
     </style>
 </head>
 <body>
-    <h2>Randevu Oluştur</h2>
+    <h1 style="text-align: center; color:rgb(0, 0, 0);" >Randevu Oluştur</h1>
     <form id="appointmentForm">
         <input type="text" id="name" placeholder="Ad Soyad" required>
 
@@ -100,4 +116,3 @@
     </script>
 </body>
 </html>
-
