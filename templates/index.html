@@ -4,54 +4,56 @@
     <meta charset="UTF-8">
     <title>Randevu Sistemi</title>
     <style>
-        /* Sayfa genel stil ayarları */
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
-            background-color: rgb(245, 230, 180); /* Arka plan rengi */
+            background-color: rgb(245, 230, 180);
         }
 
-        /* Form stil ayarları */
         form {
             width: 90%;
-            max-width: 500px; /* Maksimum genişlik */
+            max-width: 500px;
             margin: auto;
             background: white;
             padding: 40px;
             border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1); /* Gölgelendirme */
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
             display: flex;
             flex-direction: column;
-            gap: 15px; /* Elemanlar arası boşluk */
+            gap: 15px;
         }
 
-        /* Form elemanları için ortak stil */
         input, select, button {
             display: block;
             width: 100%;
-            margin-bottom: 15px;
             padding: 15px;
             border-radius: 8px;
+            border: 1px solid #ccc;
         }
 
-        /* Buton için özel stil */
         button {
             background-color: rgb(209, 218, 223);
-            font-size: 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #c6d1d6;
+        }
+
+        #result {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-
-    <!-- Başlık -->
     <h1 style="text-align: center; color:rgb(0, 0, 0);">Randevu Oluştur</h1>
 
-    <!-- Randevu formu -->
     <form id="appointmentForm">
-        <!-- Ad Soyad alanı -->
         <input type="text" id="name" placeholder="Ad Soyad" required>
 
-        <!-- Danışman seçimi (sunucudan dinamik olarak alınır) -->
         <select id="consultant" required>
             <option value="">Danışman Seçin</option>
             {% for consultant in consultants %}
@@ -59,90 +61,97 @@
             {% endfor %}
         </select>
 
-        <!-- Tarih seçimi -->
         <input type="date" id="date" required>
 
-        <!-- Saat seçimi (dolu/boş saatler API'den yüklenir) -->
         <select id="time" required>
             <option value="">Saat Seçin</option>
         </select>
 
-        <!-- Formu gönderme butonu -->
         <button type="submit">Gönder</button>
     </form>
 
-    <!-- Sonuç mesajı buraya yazılır -->
     <p id="result"></p>
 
     <script>
-        // Gerekli HTML öğelerine referans al
+        // Elemanları seç
         const dateInput = document.getElementById('date');
         const consultantSelect = document.getElementById('consultant');
         const timeSelect = document.getElementById('time');
+        const resultMessage = document.getElementById('result');
 
-        // Seçilen tarih ve danışmana göre uygun saatleri yükler
-        function loadAvailableTimes() {
+        
+         //Seçilen danışman ve tarihe göre uygun saatleti getir
+         
+        async function loadAvailableTimes() {
             const date = dateInput.value;
             const consultantId = consultantSelect.value;
-            if (!date || !consultantId) return; // Eğer veri eksikse çık
 
-            // Uygun saatleri almak için API çağrısı yap
-            fetch('/api/available-times', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date, consultantId }) // Gönderilen veri
-            })
-            .then(res => res.json())
-            .then(data => {
-                // Saat seçimini temizle
-                timeSelect.innerHTML = '<option value="">Saat Seçin</option>';
-                
-                // Uygun saatler varsa seçenek olarak ekle
-                if (data.available_times && data.available_times.length > 0) {
-                    data.available_times.forEach(time => {
-                        const option = document.createElement('option');
-                        option.value = time;
-                        option.textContent = time;
-                        timeSelect.appendChild(option);
-                    });
-                } else {
-                    // Uygun saat yoksa bilgi ver
-                    timeSelect.innerHTML = '<option value="">Uygun saat yok</option>';
-                }
+            if (!date || !consultantId) return;
+
+            try {
+                const response = await fetch('/api/available-times', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date, consultantId })
+                });
+
+                const data = await response.json();
+                updateTimeOptions(data.available_times);
+            } catch (error) {
+                console.error("Saatleri yüklerken hata:", error);
+                timeSelect.innerHTML = '<option value="">Saatler yüklenemedi</option>';
+            }
+        }
+
+        // Uygun saatleri menüye ekle
+         
+        function updateTimeOptions(times) {
+            timeSelect.innerHTML = '<option value="">Saat Seçin</option>';
+
+            if (!times || times.length === 0) {
+                timeSelect.innerHTML = '<option value="">Uygun saat yok</option>';
+                return;
+            }
+
+            times.forEach(time => {
+                const option = document.createElement('option');
+                option.value = time;
+                option.textContent = time;
+                timeSelect.appendChild(option);
             });
         }
 
-        // Tarih veya danışman seçimi değiştiğinde uygun saatleri yükle
+        // Randevuyu sunucuya gönder
+         
+        async function submitAppointmentForm(event) {
+            event.preventDefault();
+
+            const payload = {
+                name: document.getElementById('name').value,
+                date: dateInput.value,
+                time: timeSelect.value,
+                consultantId: consultantSelect.value
+            };
+
+            try {
+                const response = await fetch('/api/appointment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                resultMessage.innerText = result.message || result.error;
+            } catch (error) {
+                resultMessage.innerText = "Bir hata oluştu. Lütfen tekrar deneyin.";
+                console.error("Randevu gönderim hatası:", error);
+            }
+        }
+
+        // Event listener'lar
         dateInput.addEventListener('change', loadAvailableTimes);
         consultantSelect.addEventListener('change', loadAvailableTimes);
-
-        // Form gönderildiğinde randevu oluşturma işlemi
-        document.getElementById('appointmentForm').addEventListener('submit', function(e) {
-            e.preventDefault(); // Sayfa yenilenmesini engelle
-
-            // Form verilerini al
-            const name = document.getElementById('name').value;
-            const date = dateInput.value;
-            const time = timeSelect.value;
-            const consultantId = consultantSelect.value;
-
-            // Randevu oluşturmak için API'ye POST isteği gönder
-            fetch('/api/appointment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, date, time, consultantId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                // API'den gelen mesajı göster
-                document.getElementById('result').innerText = data.message || data.error;
-            })
-            .catch(err => {
-                // Hata durumunda mesaj göster
-                document.getElementById('result').innerText = "Hata oluştu.";
-                console.error(err);
-            });
-        });
+        document.getElementById('appointmentForm').addEventListener('submit', submitAppointmentForm);
     </script>
 </body>
 </html>
